@@ -1,0 +1,51 @@
+function [ x1, y1, x2, y2 ] = SIFT( fn1, fn2 )
+%SIFT for RANSAC chain of sequences, random match
+%   July 8, 2014
+
+close all;
+run('D:\vlfeat-0.9.16\toolbox\vl_setup.m');
+
+%read two images
+im1 = imread(fn1);
+im2 = imread(fn2);
+
+%only convert RGB images to gray
+[~, ~, q1] = size(im1);
+[~, ~, q2] = size(im2);
+
+if q1 ~= 1
+    copy1 = single(rgb2gray(im1));
+else
+    copy1 = single(im1); 
+end
+
+if q2 ~= 1
+    copy2 = single(rgb2gray(im2));
+else
+    copy2 = single(im2); 
+end
+
+%compute descriptors
+[x, y] = meshgrid([1:density:size(im1, 2),1:density:size(im1, 1)]);
+x_f = [];
+y_f = [];
+scale_f = [];
+scale = [2:2:8];
+for j = 1:length(scale)
+    x_f = [x_f x(:)];
+    y_f = [y_f y(:)];
+    scale_f = [scale_f, scale(j) * ones(numel(x))];
+end
+[f1, d1] = vl_sift(copy1, 'Frames', [x_f, y_f, scale_f, ones(numel(x_f))]);
+[f2, d2] = vl_sift(copy2);
+
+%match images using vl_ubcmatch
+i = vl_ubcmatch(d1, d2);
+
+%find set of matching points
+x1 = f1(1, i(1, :));
+y1 = f1(2, i(1, :));
+x2 = f2(1, i(2, :));
+y2 = f2(2, i(2, :));
+
+end
